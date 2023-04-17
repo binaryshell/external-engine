@@ -87,6 +87,9 @@ def main(args):
             res = ok(http.post(f"{args.broker}/api/external-engine/work", json={"providerSecret": secret}))
             if res.status_code != 200:
                 if engine.alive and engine.idle_time() > args.keep_alive:
+                    if args.idle_shutdown:
+                        subprocess.run("sudo shutdown -h now", shell=True)
+                        sys.exit()
                     logging.info("Terminating idle engine")
                     engine.terminate()
                 continue
@@ -289,6 +292,7 @@ if __name__ == "__main__":
     parser.add_argument("--max-threads", type=int, default=multiprocessing.cpu_count(), help="Maximum number of available threads")
     parser.add_argument("--max-hash", type=int, default=512, help="Maximum hash table size in MiB")
     parser.add_argument("--keep-alive", type=int, default=300, help="Number of seconds to keep an idle/unused engine process around")
+    parser.add_argument("--idle-shutdown", action="store_true", help="Shut down the system when idle for longer than keep-alive if set")
     parser.add_argument("--log-level", default="info", choices=_LOG_LEVEL_MAP.keys(), help="Logging verbosity")
 
     try:
